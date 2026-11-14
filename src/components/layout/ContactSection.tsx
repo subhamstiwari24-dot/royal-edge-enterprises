@@ -28,7 +28,7 @@ export const ContactSection: React.FC = () => {
               Immediate order assistance, bulk pricing queries, and order tracking.
             </p>
             <div className="contact-value-block">
-              <span className="value-label">Direct Line:</span>
+              <span className="value-label">Direct Line:</span>{' '}
               <a href={`tel:${COMPANY_INFO.phone.replace(/\s+/g, '')}`} className="phone-link">
                 {COMPANY_INFO.phone}
               </a>
@@ -61,7 +61,7 @@ export const ContactSection: React.FC = () => {
               </address>
             </div>
             <div className="working-hours-pill">
-              <Clock size={14} />
+              <Clock size={15} className="working-hours-icon" />
               <span>{COMPANY_INFO.operatingHours}</span>
             </div>
           </div>
@@ -77,16 +77,16 @@ export const ContactSection: React.FC = () => {
             </p>
             <div className="compliance-list">
               <div className="compliance-row">
-                <ShieldCheck size={16} className="comp-icon" />
-                <div>
-                  <span className="comp-label">GST Identification Number</span>
+                <ShieldCheck size={18} className="comp-icon" />
+                <div className="comp-text-wrap">
+                  <span className="comp-label">GST Identification Number:</span>{' '}
                   <span className="comp-val">{COMPANY_INFO.gstNumber}</span>
                 </div>
               </div>
               <div className="compliance-row">
-                <ShieldCheck size={16} className="comp-icon" />
-                <div>
-                  <span className="comp-label">MSME Udyam Registration</span>
+                <ShieldCheck size={18} className="comp-icon" />
+                <div className="comp-text-wrap">
+                  <span className="comp-label">MSME Udyam Registration:</span>{' '}
                   <span className="comp-val">{COMPANY_INFO.msmeNumber}</span>
                 </div>
               </div>

@@ -1,6 +1,7 @@
-import React from 'react';
-import { X, Check, ArrowRight, ShieldCheck, Layers, FileSpreadsheet, Package } from 'lucide-react';
+import React, { useState } from 'react';
+import { X, Check, ArrowRight, ShieldCheck, FileSpreadsheet, Package, ShoppingBag } from 'lucide-react';
 import type { PublicProduct } from '../../types';
+import { useCart } from '../../context/useCart';
 
 interface ProductDetailModalProps {
   product: PublicProduct | null;
@@ -13,12 +14,35 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
   onClose,
   onEnquire,
 }) => {
+  const { addToCart, getProductPricing } = useCart();
+  const [selectedWidth, setSelectedWidth] = useState<string>('');
+  const [quantity, setQuantity] = useState<number>(1);
+  const [added, setAdded] = useState(false);
+
   if (!product) return null;
 
   const specs = product.specifications || {};
+  const pricing = getProductPricing(product);
+
+  const availableWidths = specs.width ? specs.width.split('/').map((w) => w.trim()) : [];
+
+  const handleAddToCartModal = () => {
+    addToCart(product, quantity, selectedWidth || availableWidths[0] || undefined);
+    setAdded(true);
+    setTimeout(() => {
+      setAdded(false);
+      onClose();
+    }, 900);
+  };
 
   return (
-    <div className="modal-backdrop" onClick={onClose} role="dialog" aria-modal="true" aria-labelledby="modal-title">
+    <div
+      className="modal-backdrop"
+      onClick={onClose}
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="modal-title"
+    >
       <div className="modal-container" onClick={(e) => e.stopPropagation()}>
         <button
           type="button"
@@ -37,6 +61,10 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
                 src={product.imageUrl}
                 alt={product.name}
                 className="modal-img"
+                onError={(e) => {
+                  (e.target as HTMLImageElement).src =
+                    'https://images.unsplash.com/photo-1620799140408-edc6dcb6d633?w=800&auto=format&fit=crop&q=80';
+                }}
               />
               <span className="modal-category-badge">{product.category}</span>
             </div>
@@ -44,11 +72,11 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
             <div className="modal-trust-box">
               <div className="trust-row">
                 <ShieldCheck size={16} className="trust-icon" />
-                <span>Certified B2B Manufacturer Quality</span>
+                <span>Certified Industrial Textile Quality (ISO Grade)</span>
               </div>
               <div className="trust-row">
                 <Package size={16} className="trust-icon" />
-                <span>Sample Swatches Available on Request</span>
+                <span>Sample Swatches Dispatched for Dwell Testing</span>
               </div>
             </div>
           </div>
@@ -61,21 +89,84 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
               <p className="modal-product-desc">{product.description}</p>
             </div>
 
-            {/* ORDER PARAMETERS */}
-            <div className="modal-order-specs">
-              <div className="order-spec-item">
-                <span className="spec-label">Standard Unit</span>
-                <span className="spec-val">{product.unit}</span>
-              </div>
-              <div className="order-spec-item">
-                <span className="spec-label">Minimum Order (MOQ)</span>
-                <span className="spec-val">
-                  {product.minimumOrderQuantity} {product.unit}
+            {/* COMMERCIAL SUPPLY & MOQ MATRIX (Replaces Public Prices) */}
+            <div className="modal-pricing-matrix">
+              <div className="price-tier-card highlight">
+                <div className="tier-head">
+                  <span className="tier-name">Wholesale Production Batch</span>
+                  <span className="tier-condition">MOQ: {pricing.moq} {product.unit}</span>
+                </div>
+                <div className="tier-amount quote-only">
+                  <span className="quote-badge">Price on Request</span>
+                </div>
+                <span className="tier-savings-badge">
+                  Confidential Factory B2B Quotations
                 </span>
               </div>
-              <div className="order-spec-item">
-                <span className="spec-label">Pricing Mode</span>
-                <span className="spec-val highlight">Custom Private Quotation</span>
+
+              <div className="price-tier-card">
+                <div className="tier-head">
+                  <span className="tier-name">Sample Roll Testing</span>
+                  <span className="tier-condition">Trial Spool Testing Available</span>
+                </div>
+                <div className="tier-amount quote-only">
+                  <span className="quote-badge-sub">Contact for Pricing</span>
+                </div>
+                <span className="tier-retail-note">Fast Dispatch from Chembur</span>
+              </div>
+            </div>
+
+            {/* WIDTH SELECTOR (IF MULTIPLE SIZES AVAILABLE) */}
+            {availableWidths.length > 0 && (
+              <div className="modal-width-selector">
+                <label className="selector-label">Available Widths / Slit Sizes:</label>
+                <div className="width-pills">
+                  {availableWidths.map((w) => (
+                    <button
+                      key={w}
+                      type="button"
+                      className={`width-pill-btn ${(selectedWidth || availableWidths[0]) === w ? 'active' : ''}`}
+                      onClick={() => setSelectedWidth(w)}
+                    >
+                      {w}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* QUANTITY CONTROL & LIVE CALCULATOR */}
+            <div className="modal-quantity-row">
+              <div className="qty-picker">
+                <label className="qty-label">Quantity ({product.unit}):</label>
+                <div className="qty-buttons">
+                  <button
+                    type="button"
+                    onClick={() => setQuantity(Math.max(1, quantity - (product.unit === 'Rolls' ? 5 : 25)))}
+                    aria-label="Decrease quantity"
+                  >
+                    -
+                  </button>
+                  <input
+                    type="number"
+                    min="1"
+                    value={quantity}
+                    onChange={(e) => setQuantity(Math.max(1, parseInt(e.target.value) || 1))}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setQuantity(quantity + (product.unit === 'Rolls' ? 5 : 25))}
+                    aria-label="Increase quantity"
+                  >
+                    +
+                  </button>
+                </div>
+              </div>
+
+              <div className="live-subtotal-box">
+                <span className="subtotal-label">Requested Quantity:</span>
+                <span className="subtotal-val">{quantity} {product.unit}</span>
+                <span className="subtotal-tax-note">Official Proforma Generated Upon Inquiry</span>
               </div>
             </div>
 
@@ -142,25 +233,7 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
               </div>
             </div>
 
-            {/* APPLICATIONS */}
-            {specs.recommendedUses && specs.recommendedUses.length > 0 && (
-              <div className="modal-applications">
-                <h3 className="specs-heading">
-                  <Layers size={16} />
-                  <span>Recommended Industry Applications</span>
-                </h3>
-                <ul className="applications-list">
-                  {specs.recommendedUses.map((use, i) => (
-                    <li key={i}>
-                      <Check size={14} className="bullet-check" />
-                      <span>{use}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
-
-            {/* ACTION FOOTER */}
+            {/* ACTION BUTTONS (Prefer "Request a Quote" as Primary CTA) */}
             <div className="modal-actions-footer">
               <button
                 type="button"
@@ -170,8 +243,26 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
                   onEnquire(product);
                 }}
               >
-                <span>Request Quotation for {product.name}</span>
-                <ArrowRight size={16} />
+                <span>Request a Quote</span>
+                <ArrowRight size={15} />
+              </button>
+
+              <button
+                type="button"
+                className={`btn-secondary modal-cart-btn ${added ? 'added' : ''}`}
+                onClick={handleAddToCartModal}
+              >
+                {added ? (
+                  <>
+                    <Check size={16} />
+                    <span>Added to Order Draft</span>
+                  </>
+                ) : (
+                  <>
+                    <ShoppingBag size={16} />
+                    <span>Add {quantity} {product.unit} to Cart</span>
+                  </>
+                )}
               </button>
             </div>
           </div>

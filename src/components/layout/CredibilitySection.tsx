@@ -63,8 +63,8 @@ export const CredibilitySection: React.FC = () => {
           <div className="standards-visual-col">
             <div className="standards-image-card">
               <img
-                src="https://images.unsplash.com/photo-1544816155-12df9643f363?w=1000&auto=format&fit=crop&q=85"
-                alt="Textile converting and elastic webbing inspection at Royal Edge Enterprises"
+                src="/images/manufacturing-integrity.jpg"
+                alt="Computerized multi-needle embroidery machine with white embroidery backing and blue stitching"
                 className="standards-img"
                 loading="lazy"
               />

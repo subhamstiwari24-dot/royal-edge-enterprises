@@ -140,16 +140,22 @@ export const WhyChooseUsSection: React.FC = () => {
         {/* FACTORY ACTION BANNER */}
         <div className="factory-cta-ribbon">
           <div className="ribbon-text">
-            <strong>Require custom width slitting or sample rolls for machine testing?</strong>
-            <span>Connect directly with our Chembur technical team for test spools and private bulk rate quotation.</span>
+            <h4 className="ribbon-title">Require custom width slitting or sample rolls for machine testing?</h4>
+            <p className="ribbon-desc">
+              Connect directly with our Chembur technical team for test spools and private bulk rate quotation.
+            </p>
           </div>
           <div className="ribbon-actions">
             <a href="#enquiry" className="btn-primary ribbon-btn">
               <span>Request Material Consultation</span>
               <ArrowRight size={15} />
             </a>
-            <a href={`tel:${COMPANY_INFO.phone.replace(/\s+/g, '')}`} className="ribbon-phone-link">
-              <PhoneCall size={15} />
+            <a
+              href={`tel:${COMPANY_INFO.phone.replace(/\s+/g, '')}`}
+              className="ribbon-phone-link"
+              title="Call Factory Helpline"
+            >
+              <PhoneCall size={16} className="ribbon-phone-icon" />
               <span>{COMPANY_INFO.phone}</span>
             </a>
           </div>

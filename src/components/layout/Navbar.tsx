@@ -1,18 +1,26 @@
 import React, { useState, useEffect } from 'react';
-import { Menu, X, ArrowRight, MessageCircle } from 'lucide-react';
+import { Menu, X, Search, ShoppingBag, User, ArrowRight, MessageCircle } from 'lucide-react';
 import { COMPANY_INFO } from '../../data/initialData';
+import { useCart } from '../../context/useCart';
 
 interface NavbarProps {
   onOpenEnquiry?: () => void;
+  onOpenSearch?: () => void;
+  onOpenAccount?: () => void;
 }
 
-export const Navbar: React.FC<NavbarProps> = ({ onOpenEnquiry }) => {
+export const Navbar: React.FC<NavbarProps> = ({
+  onOpenEnquiry,
+  onOpenSearch,
+  onOpenAccount,
+}) => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
+  const { totalItems, openCart } = useCart();
 
   useEffect(() => {
     const handleScroll = () => {
-      setIsScrolled(window.scrollY > 40);
+      setIsScrolled(window.scrollY > 30);
     };
     window.addEventListener('scroll', handleScroll, { passive: true });
     return () => window.removeEventListener('scroll', handleScroll);
@@ -44,33 +52,69 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenEnquiry }) => {
         {/* DESKTOP NAVIGATION */}
         <nav className="desktop-nav" aria-label="Main Navigation">
           <a href="#home" className="nav-link">Home</a>
-          <a href="#products" className="nav-link">Products</a>
-          <a href="#manufacturing" className="nav-link">Manufacturing</a>
-          <a href="#why-choose-us" className="nav-link">Why Choose Us</a>
-          <a href="#about" className="nav-link">About</a>
+          <a href="#categories" className="nav-link">Categories</a>
+          <a href="#featured" className="nav-link">Featured</a>
+          <a href="#wholesale-benefits" className="nav-link">Wholesale Benefits</a>
+          <a href="#about" className="nav-link">About Us</a>
           <a href="#contact" className="nav-link">Contact</a>
         </nav>
 
         {/* DESKTOP ACTIONS */}
         <div className="navbar-actions">
+          {/* 1. SEARCH TRIGGER */}
+          <button
+            type="button"
+            className="navbar-action-icon"
+            onClick={onOpenSearch}
+            title="Search products, widths, SKUs"
+            aria-label="Search products"
+          >
+            <Search size={19} />
+          </button>
+
+          {/* 2. CUSTOMER ACCOUNT & ORDER TRACKING */}
+          <button
+            type="button"
+            className="navbar-action-icon"
+            onClick={onOpenAccount}
+            title="Account & Order Tracking"
+            aria-label="Account and Order Tracking"
+          >
+            <User size={19} />
+          </button>
+
+          {/* 3. SHOPPING CART WITH BADGE */}
+          <button
+            type="button"
+            className="navbar-action-icon cart-trigger-btn"
+            onClick={openCart}
+            title="Shopping Cart & Quote Draft"
+            aria-label="Shopping Cart"
+          >
+            <ShoppingBag size={19} />
+            {totalItems > 0 && <span className="cart-badge-count">{totalItems}</span>}
+          </button>
+
+          {/* 4. WHATSAPP QUICK CHAT */}
           <a
-            href={getWhatsAppLink("Hello Royal Edge Enterprises, I would like to enquire about your wholesale backing materials.")}
+            href={getWhatsAppLink("Hello Royal Edge Enterprises, I would like to enquire about wholesale interlining pricing.")}
             target="_blank"
             rel="noopener noreferrer"
-            className="navbar-icon-btn whatsapp-action"
+            className="navbar-action-icon whatsapp-icon-btn"
             title="Chat on WhatsApp"
             aria-label="Chat on WhatsApp"
           >
             <MessageCircle size={19} />
           </a>
 
+          {/* 5. REQUEST QUOTE CTA */}
           <a
             href="#enquiry"
             onClick={onOpenEnquiry}
-            className="navbar-quote-btn"
+            className="btn-primary navbar-quote-btn"
           >
             <span>Request Quote</span>
-            <ArrowRight size={15} />
+            <ArrowRight size={14} />
           </a>
 
           {/* MOBILE TOGGLE */}
@@ -99,55 +143,79 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenEnquiry }) => {
                 type="button"
                 className="close-drawer-btn"
                 onClick={closeMobileMenu}
-                aria-label="Close Menu"
+                aria-label="Close menu"
               >
                 <X size={22} />
               </button>
             </div>
 
-            <nav className="mobile-drawer-nav">
-              <a href="#home" onClick={closeMobileMenu} className="mobile-nav-link">
-                Home
-              </a>
-              <a href="#products" onClick={closeMobileMenu} className="mobile-nav-link">
-                Product Catalogue (8 Categories)
-              </a>
-              <a href="#manufacturing" onClick={closeMobileMenu} className="mobile-nav-link">
-                Manufacturing &amp; Quality
-              </a>
-              <a href="#why-choose-us" onClick={closeMobileMenu} className="mobile-nav-link">
-                Why Choose Royal Edge
-              </a>
-              <a href="#about" onClick={closeMobileMenu} className="mobile-nav-link">
-                About Us
-              </a>
-              <a href="#contact" onClick={closeMobileMenu} className="mobile-nav-link">
-                Contact &amp; Location
-              </a>
+            <div className="mobile-quick-actions">
+              <button
+                type="button"
+                className="mobile-action-pill"
+                onClick={() => {
+                  closeMobileMenu();
+                  if (onOpenSearch) onOpenSearch();
+                }}
+              >
+                <Search size={16} />
+                <span>Search Products</span>
+              </button>
+              <button
+                type="button"
+                className="mobile-action-pill"
+                onClick={() => {
+                  closeMobileMenu();
+                  if (onOpenAccount) onOpenAccount();
+                }}
+              >
+                <User size={16} />
+                <span>Track Orders</span>
+              </button>
+            </div>
+
+            <nav className="mobile-nav-links">
+              <a href="#home" onClick={closeMobileMenu}>Home</a>
+              <a href="#categories" onClick={closeMobileMenu}>Product Categories</a>
+              <a href="#featured" onClick={closeMobileMenu}>Featured Products</a>
+              <a href="#wholesale-benefits" onClick={closeMobileMenu}>Wholesale Advantages</a>
+              <a href="#about" onClick={closeMobileMenu}>About Royal Edge</a>
+              <a href="#contact" onClick={closeMobileMenu}>Contact & Factory</a>
             </nav>
 
             <div className="mobile-drawer-footer">
+              <button
+                type="button"
+                className="btn-secondary mobile-cart-btn"
+                onClick={() => {
+                  closeMobileMenu();
+                  openCart();
+                }}
+              >
+                <ShoppingBag size={17} />
+                <span>View Cart Draft ({totalItems})</span>
+              </button>
+
               <a
                 href="#enquiry"
+                className="btn-primary mobile-quote-btn"
                 onClick={() => {
                   closeMobileMenu();
                   if (onOpenEnquiry) onOpenEnquiry();
                 }}
-                className="btn-primary full-width"
               >
-                Request a Quote
-                <ArrowRight size={16} />
+                <span>Request Quotation</span>
+                <ArrowRight size={15} />
               </a>
 
               <a
-                href={getWhatsAppLink("Hello Royal Edge Enterprises, I am contacting you from your mobile website.")}
+                href={getWhatsAppLink("Hello Royal Edge Enterprises, I want to discuss a bulk purchase.")}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="btn-outline-gold full-width"
-                style={{ marginTop: '10px' }}
+                className="mobile-whatsapp-btn"
               >
-                <MessageCircle size={16} />
-                WhatsApp Direct (+91 90049 04983)
+                <MessageCircle size={18} />
+                <span>Instant WhatsApp Desk</span>
               </a>
             </div>
           </div>

@@ -1,16 +1,7 @@
-import React, { useState, useMemo } from 'react';
-import {
-  Search,
-  ArrowRight,
-  Eye,
-  MessageSquareQuote,
-  SlidersHorizontal,
-  LayoutGrid,
-  TableProperties,
-  Layers,
-  Sparkles,
-} from 'lucide-react';
-import type { PublicProduct, ProductCategory } from '../../types';
+import React, { useState } from 'react';
+import { ArrowRight, Eye, Check, ShoppingBag } from 'lucide-react';
+import type { PublicProduct } from '../../types';
+import { useCart } from '../../context/useCart';
 
 interface ProductCategoriesSectionProps {
   products: PublicProduct[];
@@ -18,369 +9,209 @@ interface ProductCategoriesSectionProps {
   onEnquireProduct: (product: PublicProduct) => void;
 }
 
-const CATEGORIES: ('All' | ProductCategory)[] = [
-  'All',
-  'Fusible Elastic',
-  'Elastic',
-  'Microdot',
-  'Belt Roll',
-  'Patti',
-  'Collar & Cuff',
-  'Strip',
-  'Spunbond',
-];
+export type MainCategory = 'All' | 'Collar' | 'Cuff' | 'Belt Roll' | 'Patti' | 'Embroidery Backing';
 
 export const ProductCategoriesSection: React.FC<ProductCategoriesSectionProps> = ({
   products,
   onSelectProduct,
   onEnquireProduct,
 }) => {
-  const [selectedCategory, setSelectedCategory] = useState<'All' | ProductCategory>('All');
-  const [searchQuery, setSearchQuery] = useState('');
-  const [viewMode, setViewMode] = useState<'gallery' | 'table'>('gallery');
+  const [selectedCategory, setSelectedCategory] = useState<MainCategory>('All');
+  const [addedProductId, setAddedProductId] = useState<number | null>(null);
+  const { addToCart, getProductPricing } = useCart();
 
-  const filteredProducts = useMemo(() => {
-    return products.filter((prod) => {
-      const matchCategory = selectedCategory === 'All' || prod.category === selectedCategory;
-      const matchSearch =
-        searchQuery.trim() === '' ||
-        prod.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        prod.category.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        prod.description.toLowerCase().includes(searchQuery.toLowerCase());
-      return matchCategory && matchSearch;
-    });
-  }, [products, selectedCategory, searchQuery]);
+  const categories: { key: MainCategory; label: string; desc: string }[] = [
+    { key: 'All', label: 'All Interlinings', desc: 'Complete Factory Range' },
+    { key: 'Collar', label: 'Collar', desc: 'Thermosetting Fusing' },
+    { key: 'Cuff', label: 'Cuff', desc: 'Shape Retention Stays' },
+    { key: 'Belt Roll', label: 'Belt Roll', desc: 'Waistband Buckram' },
+    { key: 'Patti', label: 'Patti', desc: 'Slit Embroidery Patti' },
+    { key: 'Embroidery Backing', label: 'Embroidery Backing', desc: 'Spunbond & Tear-Away' },
+  ];
 
-  // Compute product count per category for tabs
-  const categoryCounts = useMemo(() => {
-    const counts: Record<string, number> = { All: products.length };
-    products.forEach((p) => {
-      counts[p.category] = (counts[p.category] || 0) + 1;
-    });
-    return counts;
-  }, [products]);
+  const matchesCategory = (product: PublicProduct, cat: MainCategory): boolean => {
+    if (cat === 'All') return true;
+    const catLower = cat.toLowerCase();
+    const pCatLower = product.category.toLowerCase();
+    const pNameLower = product.name.toLowerCase();
+
+    if (cat === 'Collar') {
+      return pCatLower.includes('collar') || pNameLower.includes('collar') || pCatLower.includes('microdot');
+    }
+    if (cat === 'Cuff') {
+      return pCatLower.includes('cuff') || pNameLower.includes('cuff') || pCatLower.includes('strip');
+    }
+    if (cat === 'Belt Roll') {
+      return pCatLower.includes('belt') || pNameLower.includes('belt') || pCatLower.includes('elastic');
+    }
+    if (cat === 'Patti') {
+      return pCatLower.includes('patti') || pNameLower.includes('patti') || pCatLower.includes('strip');
+    }
+    if (cat === 'Embroidery Backing') {
+      return (
+        pCatLower.includes('spunbond') ||
+        pNameLower.includes('embroidery') ||
+        pNameLower.includes('backing') ||
+        pCatLower.includes('patti')
+      );
+    }
+    return pCatLower.includes(catLower);
+  };
+
+  const filteredProducts = products.filter((p) => matchesCategory(p, selectedCategory));
+
+  const handleAddToCartQuick = (e: React.MouseEvent, product: PublicProduct) => {
+    e.stopPropagation();
+    addToCart(product, 1);
+    setAddedProductId(product.id);
+    setTimeout(() => setAddedProductId(null), 1800);
+  };
 
   return (
-    <section className="products-section" id="products">
+    <section id="categories" className="categories-section">
       <div className="section-container">
-        {/* EDITORIAL SECTION HEADER */}
-        <div className="products-header-editorial">
-          <div className="header-meta-row">
-            <span className="eyebrow-badge">THE COMMERCIAL PORTFOLIO</span>
-            <span className="catalog-status-badge">8 VERIFIED PRODUCT CATEGORIES</span>
-          </div>
+        {/* SECTION HEADER */}
+        <div className="section-header-center">
+          <span className="eyebrow-badge">MANUFACTURING CATALOGUE</span>
+          <h2 className="section-title">Shop by Textile Category</h2>
+          <p className="section-subtitle">
+            Engineered thermal fusing adhesives, structured buckrams, and embroidery backings produced to ISO industrial standards. Available for immediate wholesale roll dispatch and retail orders.
+          </p>
+        </div>
 
-          <div className="header-flex-row">
-            <div>
-              <h2 className="catalog-main-title">Approved Backing &amp; Interlining Catalogue</h2>
-              <p className="catalog-main-desc">
-                Manufactured for garment exporters, boutique apparel ateliers, and high-speed computerized embroidery centers. All substrates are calibrated for dimensional stability, clean tear lines, and zero resin strike-through.
-              </p>
-            </div>
-
-            {/* VIEW MODE TOGGLE (GALLERY VS TECHNICAL SPEC LEDGER) */}
-            <div className="view-mode-toggle" role="group" aria-label="Catalogue view options">
+        {/* CATEGORY FILTER TABS */}
+        <div className="category-tabs-wrapper">
+          <div className="category-tabs-row" role="tablist">
+            {categories.map((cat) => (
               <button
+                key={cat.key}
                 type="button"
-                className={`view-btn ${viewMode === 'gallery' ? 'active' : ''}`}
-                onClick={() => setViewMode('gallery')}
-                title="Editorial Gallery View"
+                role="tab"
+                aria-selected={selectedCategory === cat.key}
+                className={`category-tab-btn ${selectedCategory === cat.key ? 'active' : ''}`}
+                onClick={() => setSelectedCategory(cat.key)}
               >
-                <LayoutGrid size={15} />
-                <span>Gallery</span>
+                <span className="tab-label">{cat.label}</span>
+                <span className="tab-desc">{cat.desc}</span>
               </button>
-              <button
-                type="button"
-                className={`view-btn ${viewMode === 'table' ? 'active' : ''}`}
-                onClick={() => setViewMode('table')}
-                title="Technical Specification Ledger"
-              >
-                <TableProperties size={15} />
-                <span>Spec Ledger</span>
-              </button>
-            </div>
+            ))}
           </div>
         </div>
 
-        {/* SEARCH AND CATEGORY FILTER BAR */}
-        <div className="catalog-toolbar-editorial">
-          <div className="search-bar-wrap">
-            <Search size={16} className="search-icon" />
-            <input
-              type="text"
-              placeholder="Search by category, width, GSM, or product name..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="catalog-search-input"
-              aria-label="Search catalogue products"
-            />
-            {searchQuery && (
-              <button
-                type="button"
-                className="clear-search-btn"
-                onClick={() => setSearchQuery('')}
+        {/* PRODUCT GRID */}
+        <div className="products-grid">
+          {filteredProducts.map((product) => {
+            const pricing = getProductPricing(product);
+            const isAdded = addedProductId === product.id;
+
+            return (
+              <div
+                key={product.id}
+                className="product-card"
+                onClick={() => onSelectProduct(product)}
               >
-                Clear
-              </button>
-            )}
-          </div>
-
-          {/* CATEGORY TABS WITH COUNT INDICATORS */}
-          <div className="category-tabs-editorial" role="tablist" aria-label="Product Categories">
-            {CATEGORIES.map((cat) => {
-              const count = categoryCounts[cat] || 0;
-              return (
-                <button
-                  key={cat}
-                  type="button"
-                  role="tab"
-                  aria-selected={selectedCategory === cat}
-                  className={`category-pill-editorial ${selectedCategory === cat ? 'active' : ''}`}
-                  onClick={() => setSelectedCategory(cat)}
-                >
-                  {cat === 'All' && <SlidersHorizontal size={12} />}
-                  <span>{cat}</span>
-                  <span className="pill-count">{count}</span>
-                </button>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* RESULTS SUMMARY BAR */}
-        <div className="results-count-bar">
-          <span className="results-count-text">
-            Showing <strong>{filteredProducts.length}</strong> of <strong>{products.length}</strong> approved textile lines
-            {selectedCategory !== 'All' && <span> in category &ldquo;{selectedCategory}&rdquo;</span>}
-          </span>
-          {selectedCategory !== 'All' && (
-            <button
-              type="button"
-              className="reset-filter-link"
-              onClick={() => setSelectedCategory('All')}
-            >
-              Show all categories
-            </button>
-          )}
-        </div>
-
-        {/* EMPTY STATE */}
-        {filteredProducts.length === 0 ? (
-          <div className="no-products-state">
-            <p className="no-products-title">No matching textile products found</p>
-            <p className="no-products-desc">
-              We couldn&apos;t find any products matching &ldquo;{searchQuery}&rdquo;. Try another search term or reset the category filter.
-            </p>
-            <button
-              type="button"
-              className="btn-outline-gold"
-              onClick={() => {
-                setSelectedCategory('All');
-                setSearchQuery('');
-              }}
-            >
-              Reset All Filters
-            </button>
-          </div>
-        ) : viewMode === 'gallery' ? (
-          /* =========================================================
-             VIEW 1: EDITORIAL GALLERY GRID
-             ========================================================= */
-          <div className="products-editorial-grid">
-            {filteredProducts.map((product) => (
-              <article key={product.id} className="editorial-product-card">
-                {/* IMAGE CONTAINER WITH DISCRETE BADGES */}
-                <div className="product-visual-wrapper">
+                {/* CARD IMAGE & BADGES */}
+                <div className="product-card-image-box">
                   <img
                     src={product.imageUrl}
                     alt={product.name}
-                    className="product-visual-img"
+                    className="product-card-img"
                     loading="lazy"
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).src =
+                        'https://images.unsplash.com/photo-1620799140408-edc6dcb6d633?w=800&auto=format&fit=crop&q=80';
+                    }}
                   />
-                  <div className="product-visual-meta">
-                    <span className="category-meta-badge">{product.category}</span>
-                    {product.featured && (
-                      <span className="core-line-badge">
-                        <Sparkles size={11} />
-                        Core Line
-                      </span>
-                    )}
+                  <div className="product-badge-overlay">
+                    <span className="card-category-badge">{product.category}</span>
+                    {product.featured && <span className="card-featured-badge">Featured Batch</span>}
                   </div>
-                  <div className="product-quick-trigger">
+                  <div className="product-quick-overlay">
                     <button
                       type="button"
-                      className="quick-spec-btn"
-                      onClick={() => onSelectProduct(product)}
-                      aria-label={`View technical specifications for ${product.name}`}
+                      className="quick-view-btn"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onSelectProduct(product);
+                      }}
                     >
-                      <Eye size={14} />
-                      <span>Technical Specs</span>
+                      <Eye size={15} />
+                      <span>View Specifications</span>
                     </button>
                   </div>
                 </div>
 
-                {/* PRODUCT DATA BODY */}
-                <div className="product-editorial-body">
-                  <div className="product-sku-row">
-                    <span className="product-sku-code">SKU: {product.sku || `RE-0${product.id}`}</span>
-                    <span className="product-moq-badge">MOQ: {product.minimumOrderQuantity} {product.unit}</span>
+                {/* CARD CONTENT */}
+                <div className="product-card-body">
+                  <div className="product-card-meta">
+                    <span className="product-sku">SKU: {product.sku || `RE-${product.id}`}</span>
+                    <span className="product-unit-tag">Per {product.unit}</span>
                   </div>
 
-                  <h3 className="product-editorial-title" title={product.name}>
-                    {product.name}
-                  </h3>
+                  <h3 className="product-card-title">{product.name}</h3>
 
-                  <p className="product-editorial-desc">
-                    {product.description}
-                  </p>
+                  <p className="product-card-desc">{product.description}</p>
 
-                  {/* TECHNICAL ATTRIBUTES CHIPS */}
-                  <div className="product-spec-chips">
-                    {product.specifications.width && (
-                      <div className="spec-chip">
-                        <span className="chip-label">Width:</span>
-                        <span className="chip-value">{product.specifications.width.split('/')[0].trim()}</span>
+                  {/* KEY SPECS SUMMARY */}
+                  <div className="product-card-specs-row">
+                    {product.specifications?.width && (
+                      <div className="spec-pill">
+                        <strong>Width:</strong> {product.specifications.width}
                       </div>
                     )}
-                    {product.specifications.weightGsm && (
-                      <div className="spec-chip">
-                        <span className="chip-label">GSM:</span>
-                        <span className="chip-value">{product.specifications.weightGsm}</span>
-                      </div>
-                    )}
-                    {product.specifications.fusingTemperature && (
-                      <div className="spec-chip">
-                        <span className="chip-label">Temp:</span>
-                        <span className="chip-value">{product.specifications.fusingTemperature}</span>
+                    {product.specifications?.fusingTemperature && (
+                      <div className="spec-pill">
+                        <strong>Fusing:</strong> {product.specifications.fusingTemperature}
                       </div>
                     )}
                   </div>
 
-                  {/* BOTTOM ACTION BUTTONS */}
-                  <div className="product-editorial-actions">
+                  {/* QUOTATION & MOQ DISPLAY (Replaces Public Prices) */}
+                  <div className="product-pricing-box">
+                    <div className="pricing-wholesale-line">
+                      <span className="price-val">Price on Request</span>
+                      <span className="tier-tag wholesale">MOQ: {pricing.moq} {product.unit}</span>
+                    </div>
+                    <div className="pricing-retail-line">
+                      <span>Contact for Private Commercial Rates</span>
+                    </div>
+                  </div>
+
+                  {/* CARD ACTIONS */}
+                  <div className="product-card-actions" onClick={(e) => e.stopPropagation()}>
                     <button
                       type="button"
-                      className="action-details-btn"
-                      onClick={() => onSelectProduct(product)}
+                      className="btn-primary product-quote-btn"
+                      onClick={() => onEnquireProduct(product)}
+                      title="Request a customized wholesale quotation"
                     >
-                      <span>Specifications</span>
+                      <span>Request a Quote</span>
                       <ArrowRight size={13} />
                     </button>
 
                     <button
                       type="button"
-                      className="action-enquire-btn"
-                      onClick={() => onEnquireProduct(product)}
+                      className={`btn-secondary product-add-cart-btn ${isAdded ? 'is-added' : ''}`}
+                      onClick={(e) => handleAddToCartQuick(e, product)}
+                      title="Add 1 unit to cart draft"
                     >
-                      <MessageSquareQuote size={13} />
-                      <span>Request Quote</span>
+                      {isAdded ? (
+                        <>
+                          <Check size={16} />
+                          <span>Added to Draft</span>
+                        </>
+                      ) : (
+                        <>
+                          <ShoppingBag size={15} />
+                          <span>Add to Cart</span>
+                        </>
+                      )}
                     </button>
                   </div>
                 </div>
-              </article>
-            ))}
-          </div>
-        ) : (
-          /* =========================================================
-             VIEW 2: TECHNICAL SPECIFICATION LEDGER TABLE
-             ========================================================= */
-          <div className="spec-ledger-table-wrap">
-            <table className="spec-ledger-table">
-              <thead>
-                <tr>
-                  <th className="th-product">Material &amp; Category</th>
-                  <th className="th-widths">Available Widths</th>
-                  <th className="th-gsm">Weight / GSM</th>
-                  <th className="th-composition">Composition &amp; Bonding</th>
-                  <th className="th-moq">Packaging &amp; MOQ</th>
-                  <th className="th-action">Commercial Action</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredProducts.map((product) => (
-                  <tr key={product.id}>
-                    <td className="td-product">
-                      <div className="table-product-cell">
-                        <img
-                          src={product.imageUrl}
-                          alt={product.name}
-                          className="table-product-thumb"
-                          loading="lazy"
-                        />
-                        <div>
-                          <span className="table-cat-badge">{product.category}</span>
-                          <strong className="table-prod-name">{product.name}</strong>
-                          <span className="table-sku">SKU: {product.sku || `RE-0${product.id}`}</span>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="td-widths">
-                      <span className="table-spec-text">
-                        {product.specifications.width || 'Custom slit per order'}
-                      </span>
-                    </td>
-                    <td className="td-gsm">
-                      <span className="table-gsm-pill">
-                        {product.specifications.weightGsm || 'Standard Grade'}
-                      </span>
-                    </td>
-                    <td className="td-composition">
-                      <span className="table-comp-text">
-                        {product.specifications.composition || product.specifications.coatingType || 'Synthetic / Natural blend'}
-                      </span>
-                    </td>
-                    <td className="td-moq">
-                      <div className="table-moq-block">
-                        <strong>{product.minimumOrderQuantity} {product.unit}</strong>
-                        <small>{product.specifications.packaging || 'Factory standard rolls'}</small>
-                      </div>
-                    </td>
-                    <td className="td-action">
-                      <div className="table-actions">
-                        <button
-                          type="button"
-                          className="table-btn-spec"
-                          onClick={() => onSelectProduct(product)}
-                          title="View complete specifications"
-                        >
-                          <Eye size={13} />
-                          <span>Specs</span>
-                        </button>
-                        <button
-                          type="button"
-                          className="table-btn-rfq"
-                          onClick={() => onEnquireProduct(product)}
-                          title="Request commercial quotation"
-                        >
-                          <MessageSquareQuote size={13} />
-                          <span>Quote</span>
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-
-        {/* COMMERCIAL QUOTATION POLICY DOSSIER BANNER */}
-        <div className="catalogue-policy-ledger">
-          <div className="policy-ledger-icon">
-            <Layers size={22} />
-          </div>
-          <div className="policy-ledger-content">
-            <h4 className="policy-ledger-title">B2B Private Commercial Quotation Policy</h4>
-            <p className="policy-ledger-desc">
-              In strict adherence to textile industry wholesale norms and to protect our retail dealers and garment manufacturing clients, itemized per-meter or per-roll pricing is issued exclusively through formal quotations based on ordered volume, required widths, and dispatch logistics.
-            </p>
-          </div>
-          <div className="policy-ledger-action">
-            <a href="#enquiry" className="btn-primary policy-rfq-btn">
-              <span>Request Custom Price List</span>
-              <ArrowRight size={14} />
-            </a>
-          </div>
+              </div>
+            );
+          })}
         </div>
       </div>
     </section>

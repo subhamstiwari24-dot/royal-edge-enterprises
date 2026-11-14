@@ -1,21 +1,19 @@
 import React from 'react';
-import { Phone, MapPin, MessageCircle, ArrowUp } from 'lucide-react';
+import { Phone, MapPin, MessageCircle, ArrowUp, ShieldCheck, Award } from 'lucide-react';
 import { COMPANY_INFO } from '../../data/initialData';
-import type { ProductCategory } from '../../types';
 
 interface FooterProps {
-  onSelectCategory?: (cat: ProductCategory) => void;
+  onSelectCategory?: (cat: string) => void;
 }
 
-const CATEGORIES: ProductCategory[] = [
+const PRIMARY_CATEGORIES = [
+  'Collar Interlining',
+  'Cuff Stays & Strips',
+  'Trouser Belt Rolls',
+  'Embroidery Patti',
+  'Spunbond Backing',
   'Fusible Elastic',
-  'Elastic',
-  'Microdot',
-  'Belt Roll',
-  'Patti',
-  'Collar & Cuff',
-  'Strip',
-  'Spunbond',
+  'Microdot Interlining',
 ];
 
 export const Footer: React.FC<FooterProps> = ({ onSelectCategory }) => {
@@ -25,11 +23,12 @@ export const Footer: React.FC<FooterProps> = ({ onSelectCategory }) => {
 
   const getWhatsAppLink = () =>
     `https://wa.me/${COMPANY_INFO.whatsappNumber}?text=${encodeURIComponent(
-      'Hello Royal Edge Enterprises, I am contacting you from your website.'
+      'Hello Royal Edge Enterprises, I am contacting you regarding your wholesale textile products.'
     )}`;
 
   return (
     <footer className="site-footer">
+      {/* MOTTO BAR */}
       <div className="footer-top-strip">
         <div className="section-container footer-top-flex">
           <div className="footer-motto">
@@ -50,7 +49,7 @@ export const Footer: React.FC<FooterProps> = ({ onSelectCategory }) => {
 
       <div className="section-container footer-main-content">
         <div className="footer-grid">
-          {/* COL 1: BRAND & MISSION */}
+          {/* COL 1: BRAND & CREDENTIALS */}
           <div className="footer-brand-col">
             <a href="#home" className="footer-logo-link" aria-label="Royal Edge Home">
               <div className="footer-logo-frame">
@@ -67,12 +66,18 @@ export const Footer: React.FC<FooterProps> = ({ onSelectCategory }) => {
             </a>
 
             <p className="footer-about-text">
-              Specialized manufacturer and converter of fusible elastic, collar buckram, precision microdot interlinings, patti rolls, and spunbond embroidery backing materials.
+              Specialized textile converter and manufacturer of fusible interlinings, trouser waistband belt rolls, microdot adhesives, embroidery patti, and spunbond stabilizers.
             </p>
 
             <div className="footer-compliance-badges">
-              <span className="comp-tag">GST: {COMPANY_INFO.gstNumber}</span>
-              <span className="comp-tag">MSME: {COMPANY_INFO.msmeNumber}</span>
+              <div className="comp-tag">
+                <Award size={13} className="text-gold" />
+                <span>GST: {COMPANY_INFO.gstNumber}</span>
+              </div>
+              <div className="comp-tag">
+                <ShieldCheck size={13} className="text-gold" />
+                <span>MSME: {COMPANY_INFO.msmeNumber}</span>
+              </div>
             </div>
           </div>
 
@@ -81,23 +86,23 @@ export const Footer: React.FC<FooterProps> = ({ onSelectCategory }) => {
             <h4 className="footer-heading">Navigation</h4>
             <ul className="footer-links-list">
               <li><a href="#home">Home</a></li>
-              <li><a href="#products">Product Catalogue</a></li>
-              <li><a href="#manufacturing">Manufacturing Assurance</a></li>
-              <li><a href="#why-choose-us">Why Choose Us</a></li>
+              <li><a href="#categories">Product Categories</a></li>
+              <li><a href="#featured">Featured Materials</a></li>
+              <li><a href="#wholesale-benefits">Wholesale Advantages</a></li>
               <li><a href="#about">About Royal Edge</a></li>
-              <li><a href="#enquiry">Request a Quote</a></li>
-              <li><a href="#contact">Contact &amp; Location</a></li>
+              <li><a href="#enquiry">Request Quote</a></li>
+              <li><a href="#contact">Contact &amp; Factory</a></li>
             </ul>
           </div>
 
-          {/* COL 3: 8 PRODUCT CATEGORIES */}
+          {/* COL 3: 5 PRIMARY TEXTILE CATEGORIES */}
           <div className="footer-col">
-            <h4 className="footer-heading">Product Categories</h4>
+            <h4 className="footer-heading">Material Categories</h4>
             <ul className="footer-links-list">
-              {CATEGORIES.map((cat) => (
+              {PRIMARY_CATEGORIES.map((cat) => (
                 <li key={cat}>
                   <a
-                    href="#products"
+                    href="#categories"
                     onClick={() => {
                       if (onSelectCategory) onSelectCategory(cat);
                     }}
@@ -111,12 +116,12 @@ export const Footer: React.FC<FooterProps> = ({ onSelectCategory }) => {
 
           {/* COL 4: CONTACT & DISPATCH */}
           <div className="footer-col footer-contact-col">
-            <h4 className="footer-heading">Factory &amp; Sales Desk</h4>
+            <h4 className="footer-heading">Factory Wholesale Desk</h4>
 
             <div className="footer-contact-item">
-              <Phone size={16} className="f-icon" />
+              <Phone size={15} className="f-icon" />
               <div>
-                <small>Direct Order Helpline</small>
+                <small>Helpline &amp; WhatsApp</small>
                 <a href={`tel:${COMPANY_INFO.phone.replace(/\s+/g, '')}`}>
                   {COMPANY_INFO.phone}
                 </a>
@@ -124,11 +129,11 @@ export const Footer: React.FC<FooterProps> = ({ onSelectCategory }) => {
             </div>
 
             <div className="footer-contact-item">
-              <MapPin size={16} className="f-icon" />
+              <MapPin size={15} className="f-icon" />
               <div>
-                <small>Factory Address</small>
+                <small>Chembur Production Unit</small>
                 <p>
-                  Puja Garage, Santosh Nagar, Pestom Sagar, P.L. Lokhande Marg, Chembur, Mumbai - 400089
+                  {COMPANY_INFO.address}
                 </p>
               </div>
             </div>
@@ -140,7 +145,7 @@ export const Footer: React.FC<FooterProps> = ({ onSelectCategory }) => {
               className="btn-outline-gold footer-wa-btn"
             >
               <MessageCircle size={15} />
-              <span>Message on WhatsApp</span>
+              <span>Direct WhatsApp Desk</span>
             </a>
           </div>
         </div>
@@ -150,11 +155,11 @@ export const Footer: React.FC<FooterProps> = ({ onSelectCategory }) => {
       <div className="footer-bottom-bar">
         <div className="section-container footer-bottom-flex">
           <p className="copyright-text">
-            &copy; 2026 Royal Edge Enterprises. All Rights Reserved. Client-approved catalogue baseline.
+            &copy; 2026 {COMPANY_INFO.name}. All Rights Reserved. Mumbai, Maharashtra.
           </p>
 
           <div className="footer-bottom-links">
-            <span className="privacy-note">Confidential B2B Wholesale Pricing Structure</span>
+            <span className="privacy-note">Official B2B &amp; B2C Manufacturing Portal</span>
           </div>
         </div>
       </div>

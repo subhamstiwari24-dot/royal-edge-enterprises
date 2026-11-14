@@ -1,173 +1,264 @@
-import React from 'react';
-import { ArrowRight, FileText, MessageCircle, ShieldCheck, Cpu, Sliders, Layers } from 'lucide-react';
-import { COMPANY_INFO } from '../../data/initialData';
+import React, { useState, useEffect } from 'react';
+import { ArrowRight, CheckCircle2, ChevronLeft, ChevronRight, Factory, Layers } from 'lucide-react';
 
 interface HeroSectionProps {
   onOpenEnquiry?: () => void;
 }
 
+interface HeroSlide {
+  id: number;
+  image: string;
+  alt: string;
+  title: string;
+  badge: string;
+}
+
+const HERO_SLIDES: HeroSlide[] = [
+  {
+    id: 1,
+    image: '/images/products/microdot-fusible-interlining.jpg',
+    alt: 'Microdot Coated Fusible Interlining Fabric - Computerized High-Bond Adhesive',
+    title: 'Microdot Coated Fabric',
+    badge: '180-Mesh Microdot Resin',
+  },
+  {
+    id: 2,
+    image: '/images/manufacturing-integrity.jpg',
+    alt: 'Garment Manufacturing Materials - Computerized Multi-Needle Embroidery & Stabilizer',
+    title: 'Garment Manufacturing Materials',
+    badge: 'Zero Fabric Distortion',
+  },
+  {
+    id: 3,
+    image: '/images/products/spunbond-embroidery-backing.jpg',
+    alt: 'Textile Backing Rolls - Spunbond Polypropylene Non-Woven Stabilizer Roll',
+    title: 'Textile Backing Rolls',
+    badge: 'Spunbond PP Stabilizer',
+  },
+  {
+    id: 4,
+    image: '/images/products/collar-interlining.jpg',
+    alt: 'Fusible Interlining Fabric - Thermosetting High-Bond Collar & Cuff Fusing',
+    title: 'Fusible Interlining Fabric',
+    badge: 'Thermosetting Pre-Shrunk',
+  },
+];
+
 export const HeroSection: React.FC<HeroSectionProps> = ({ onOpenEnquiry }) => {
-  const getWhatsAppLink = (text: string) =>
-    `https://wa.me/${COMPANY_INFO.whatsappNumber}?text=${encodeURIComponent(text)}`;
+  const [currentSlide, setCurrentSlide] = useState(0);
+  const [isHovered, setIsHovered] = useState(false);
+
+  useEffect(() => {
+    if (isHovered) return;
+    const timer = setInterval(() => {
+      setCurrentSlide((prev) => (prev + 1) % HERO_SLIDES.length);
+    }, 4500);
+    return () => clearInterval(timer);
+  }, [isHovered]);
+
+  const goToPrev = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setCurrentSlide((prev) => (prev - 1 + HERO_SLIDES.length) % HERO_SLIDES.length);
+  };
+
+  const goToNext = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setCurrentSlide((prev) => (prev + 1) % HERO_SLIDES.length);
+  };
+
+  const handleExploreMore = (e: React.MouseEvent) => {
+    e.preventDefault();
+    const categoriesSection = document.getElementById('categories');
+    if (categoriesSection) {
+      categoriesSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    } else {
+      window.location.hash = '#categories';
+    }
+  };
 
   return (
-    <section className="hero-section" id="home">
-      <div className="section-container">
-        {/* EDITORIAL TOP METADATA BAR */}
-        <div className="hero-metadata-strip">
-          <div className="meta-strip-item">
-            <span className="meta-dot"></span>
-            <span>MUMBAI DIRECT CONVERTING FACILITY</span>
+    <section id="home" className="hero-section">
+      <div className="section-container hero-container">
+        {/* LEFT COLUMN: EDITORIAL TEXTILE MESSAGING */}
+        <div className="hero-content">
+          <div className="hero-eyebrow">
+            <span className="eyebrow-badge">MANUFACTURER & WHOLESALER</span>
+            <span className="hero-location-tag">Chembur, Mumbai</span>
           </div>
-          <div className="meta-strip-divider">//</div>
-          <div className="meta-strip-item">
-            <span>B2B COMMERCIAL ENQUIRY &amp; SUPPLY</span>
-          </div>
-          <div className="meta-strip-divider">//</div>
-          <div className="meta-strip-item">
-            <span>GST: {COMPANY_INFO.gstNumber}</span>
-          </div>
-        </div>
 
-        {/* ASYMMETRICAL ARCHITECTURAL HERO COMPOSITION */}
-        <div className="hero-grid-architectural">
-          {/* LEFT: EDITORIAL COPY & CALL TO ACTION */}
-          <div className="hero-narrative-col">
-            <div className="hero-eyebrow">
-              <span className="eyebrow-line"></span>
-              <span className="eyebrow-text">THE INTERLINING COMPANY</span>
+          <h1 className="hero-title">
+            Precision Fusible Interlining & Backing Materials for Apparel Excellence
+          </h1>
+
+          <p className="hero-subtitle">
+            Supplying India’s leading garment exporters, uniform manufacturers, and bespoke tailors with premium collar fusing, waistband belt rolls, embroidery patti, and spunbond backing.
+          </p>
+
+          {/* KEY PRODUCTION PILLARS */}
+          <div className="hero-highlights-grid">
+            <div className="hero-highlight-item">
+              <CheckCircle2 size={16} className="highlight-icon" />
+              <span>Tested Thermal Adhesive Recovery</span>
             </div>
-
-            <h1 className="hero-headline">
-              Precision Backing.<br />
-              <span className="headline-accent">Flawless Embroidery.</span>
-            </h1>
-
-            <p className="hero-lead-text">
-              Royal Edge Enterprises manufactures certified embroidery backing rolls, fusible tapes, and structured interlinings calibrated for computerized multi-head machines and industrial thermal fusing presses.
-            </p>
-
-            <p className="hero-subtext">
-              Supplying apparel export houses, uniform manufacturers, and boutique fashion ateliers across India with materials engineered for zero resin strike-through, stable tension, and crisp seam retention.
-            </p>
-
-            {/* CALL TO ACTION BUTTONS */}
-            <div className="hero-cta-group">
-              <a href="#products" className="btn-primary hero-btn-primary">
-                <span>Explore 8 Approved Lines</span>
-                <ArrowRight size={15} />
-              </a>
-
-              <a
-                href="#enquiry"
-                onClick={onOpenEnquiry}
-                className="btn-secondary hero-btn-secondary"
-              >
-                <FileText size={15} />
-                <span>Request Private Quote</span>
-              </a>
-
-              <a
-                href={getWhatsAppLink("Hello Royal Edge Enterprises, I am contacting you regarding bulk embroidery backing and interlining requirements.")}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="hero-whatsapp-link"
-                title="Direct WhatsApp Sales Desk"
-              >
-                <MessageCircle size={16} />
-                <span>Instant Sales Desk</span>
-              </a>
+            <div className="hero-highlight-item">
+              <CheckCircle2 size={16} className="highlight-icon" />
+              <span>Custom Slit Widths (10mm to 150cm)</span>
             </div>
-
-            {/* EDITORIAL COMPLIANCE TICKERS */}
-            <div className="hero-credentials-row">
-              <div className="cred-badge">
-                <ShieldCheck size={14} className="cred-badge-icon" />
-                <span>Direct Mumbai Manufacturer</span>
-              </div>
-              <div className="cred-badge">
-                <Layers size={14} className="cred-badge-icon" />
-                <span>Retail Sampling &amp; Bulk Dispatch</span>
-              </div>
-              <div className="cred-badge">
-                <Sliders size={14} className="cred-badge-icon" />
-                <span>Custom Millimeter Slitting</span>
-              </div>
+            <div className="hero-highlight-item">
+              <CheckCircle2 size={16} className="highlight-icon" />
+              <span>Dual B2B Wholesale & Retail Rolls</span>
+            </div>
+            <div className="hero-highlight-item">
+              <CheckCircle2 size={16} className="highlight-icon" />
+              <span>Certified GST Invoicing & MSME Assured</span>
             </div>
           </div>
 
-          {/* RIGHT: BESPOKE INDUSTRIAL VISUAL SHOWCASE */}
-          <div className="hero-visual-col">
-            <div className="hero-image-architectural-frame">
-              <img
-                src="https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=1400&auto=format&fit=crop&q=85"
-                alt="Precision textile rolls and embroidery backing conversion in Mumbai factory"
-                className="hero-image-main"
-                loading="eager"
-              />
-              <div className="hero-image-vignette"></div>
+          {/* ACTION BUTTONS */}
+          <div className="hero-cta-group">
+            <a href="#categories" className="btn-primary hero-btn-main">
+              <span>Explore Product Catalog</span>
+              <ArrowRight size={16} />
+            </a>
 
-              {/* INTEGRATED TECHNICAL DOSSIER CAPTION (NO FLOATING STICKERS) */}
-              <div className="hero-image-ledger-overlay">
-                <div className="overlay-header">
-                  <Cpu size={14} className="overlay-icon" />
-                  <span className="overlay-title">SPECIFICATION DOSSIER: CORE ROLL SERIES</span>
-                </div>
-                <div className="overlay-grid">
-                  <div className="overlay-item">
-                    <span className="item-label">COATING</span>
-                    <strong className="item-val">180-Mesh Polyamide Microdot</strong>
-                  </div>
-                  <div className="overlay-item">
-                    <span className="item-label">CONVERTING</span>
-                    <strong className="item-val">10mm – 2,100mm Slitting</strong>
-                  </div>
-                  <div className="overlay-item">
-                    <span className="item-label">FACILITY</span>
-                    <strong className="item-val">Chembur, Mumbai - 89</strong>
-                  </div>
-                </div>
-              </div>
+            <a
+              href="#enquiry"
+              onClick={onOpenEnquiry}
+              className="btn-secondary hero-btn-sub"
+            >
+              <span>Request Wholesale Quote</span>
+            </a>
+          </div>
+
+          {/* TRUST BADGE STRIP */}
+          <div className="hero-trust-strip">
+            <div className="trust-stat">
+              <span className="stat-number">25+</span>
+              <span className="stat-label">Years Textile Expertise</span>
+            </div>
+            <div className="trust-stat-divider" />
+            <div className="trust-stat">
+              <span className="stat-number">50,000+</span>
+              <span className="stat-label">Meters Ready Inventory</span>
+            </div>
+            <div className="trust-stat-divider" />
+            <div className="trust-stat">
+              <span className="stat-number">48 Hrs</span>
+              <span className="stat-label">Dispatch Turnaround</span>
             </div>
           </div>
         </div>
 
-        {/* BOTTOM TECHNICAL SPECIFICATION LEDGER STRIP (FULL WIDTH) */}
-        <div className="hero-specs-ledger-strip">
-          <div className="ledger-col">
-            <div className="ledger-num">01</div>
-            <div className="ledger-body">
-              <span className="ledger-tag">SUBSTRATE CLASS</span>
-              <strong className="ledger-title">30 GSM to 220 GSM</strong>
-              <p className="ledger-desc">Spunbond non-woven, tear-away patti, and woven collar buckrams.</p>
+        {/* RIGHT COLUMN: LUXURY INDUSTRIAL TEXTILE SHOWCASE & SLIDER */}
+        <div className="hero-media-wrapper">
+          <div
+            className="hero-image-card"
+            onMouseEnter={() => setIsHovered(true)}
+            onMouseLeave={() => setIsHovered(false)}
+            onTouchStart={() => setIsHovered(true)}
+            onTouchEnd={() => setIsHovered(false)}
+          >
+            <div className="hero-image-inner">
+              {/* HORIZONTAL SLIDER TRACK */}
+              <div
+                className="hero-slider-track"
+                style={{ transform: `translateX(-${currentSlide * 100}%)` }}
+              >
+                {HERO_SLIDES.map((slide) => (
+                  <div key={slide.id} className="hero-slide">
+                    <img
+                      src={slide.image}
+                      alt={slide.alt}
+                      className="hero-slide-img"
+                    />
+                    <div className="hero-slide-overlay" />
+                  </div>
+                ))}
+              </div>
+
+              {/* SINGLE ELEGANT GOLD-ACCENTED LABEL AT TOP-LEFT */}
+              <div className="hero-top-badge">
+                <span className="gold-accent-dot" />
+                <span className="hero-badge-title">{HERO_SLIDES[currentSlide].title}</span>
+                <span className="hero-badge-divider">•</span>
+                <span className="hero-badge-subtitle">{HERO_SLIDES[currentSlide].badge}</span>
+              </div>
+
+              {/* MANUAL NAVIGATION ARROWS */}
+              <button
+                type="button"
+                className="hero-slider-arrow hero-slider-prev"
+                onClick={goToPrev}
+                aria-label="Previous slide"
+              >
+                <ChevronLeft size={18} />
+              </button>
+              <button
+                type="button"
+                className="hero-slider-arrow hero-slider-next"
+                onClick={goToNext}
+                aria-label="Next slide"
+              >
+                <ChevronRight size={18} />
+              </button>
+
+              {/* SLIDER DOT INDICATORS */}
+              <div
+                className="hero-slider-dots"
+                role="tablist"
+                aria-label="Slider navigation"
+              >
+                {HERO_SLIDES.map((slide, idx) => (
+                  <button
+                    key={slide.id}
+                    type="button"
+                    role="tab"
+                    aria-selected={idx === currentSlide}
+                    aria-label={`Go to slide ${idx + 1}: ${slide.title}`}
+                    className={`hero-slider-dot ${idx === currentSlide ? 'active' : ''}`}
+                    onClick={() => setCurrentSlide(idx)}
+                  />
+                ))}
+              </div>
             </div>
           </div>
 
-          <div className="ledger-col">
-            <div className="ledger-num">02</div>
-            <div className="ledger-body">
-              <span className="ledger-tag">CONVERTING TOLERANCE</span>
-              <strong className="ledger-title">10mm to 2,100mm</strong>
-              <p className="ledger-desc">Custom slit rolls with sealed, razor-clean selvages to eliminate fraying.</p>
+          {/* CLEAN HORIZONTAL MANUFACTURING INFORMATION STRIP BELOW IMAGE */}
+          <div className="hero-manufacturing-strip">
+            <div className="mfg-strip-item">
+              <div className="mfg-strip-icon">
+                <Factory size={16} />
+              </div>
+              <div className="mfg-strip-content">
+                <span className="mfg-strip-label">Direct Factory Facility</span>
+                <span className="mfg-strip-val">Chembur, Mumbai 400089</span>
+              </div>
+            </div>
+
+            <div className="mfg-strip-divider" />
+
+            <div className="mfg-strip-item">
+              <div className="mfg-strip-icon">
+                <Layers size={16} />
+              </div>
+              <div className="mfg-strip-content">
+                <span className="mfg-strip-label">Fusible Technology</span>
+                <span className="mfg-strip-val">Microdot Computerized Coating</span>
+              </div>
             </div>
           </div>
 
-          <div className="ledger-col">
-            <div className="ledger-num">03</div>
-            <div className="ledger-body">
-              <span className="ledger-tag">BONDING INTEGRITY</span>
-              <strong className="ledger-title">Zero Strike-Through</strong>
-              <p className="ledger-desc">Computerized microdot thermal distribution for bubble-free adhesion.</p>
-            </div>
-          </div>
-
-          <div className="ledger-col">
-            <div className="ledger-num">04</div>
-            <div className="ledger-body">
-              <span className="ledger-tag">ORDER FLEXIBILITY</span>
-              <strong className="ledger-title">Trial Spool to Container</strong>
-              <p className="ledger-desc">Tailored supply agreements for sampling trials and continuous factory lots.</p>
-            </div>
+          {/* ATTRACTIVE EXPLORE MORE BUTTON */}
+          <div className="hero-slider-action-bar">
+            <button
+              type="button"
+              className="hero-explore-more-btn"
+              onClick={handleExploreMore}
+              aria-label="Explore Product Categories"
+            >
+              <span>Explore More</span>
+              <ArrowRight size={16} className="explore-btn-arrow" />
+            </button>
           </div>
         </div>
       </div>

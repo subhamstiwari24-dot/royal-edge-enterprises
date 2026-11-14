@@ -19,9 +19,11 @@ import { royalEdgeService } from '../services/api';
 
 export const AdminPortalPage: React.FC = () => {
   const navigate = useNavigate();
+
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() =>
     royalEdgeService.isAdminAuthenticated()
   );
+
   const [currentTab, setCurrentTab] = useState<AdminTab>('overview');
 
   // Domain data
@@ -58,6 +60,7 @@ export const AdminPortalPage: React.FC = () => {
 
   useEffect(() => {
     let active = true;
+
     if (isAuthenticated) {
       Promise.all([
         royalEdgeService.getAdminProducts(),
@@ -68,6 +71,7 @@ export const AdminPortalPage: React.FC = () => {
       ])
         .then(([prods, custs, enqs, quotes, ords]) => {
           if (!active) return;
+
           setProducts(prods);
           setCustomers(custs);
           setEnquiries(enqs);
@@ -78,6 +82,7 @@ export const AdminPortalPage: React.FC = () => {
           console.error('Failed to load admin data:', err);
         });
     }
+
     return () => {
       active = false;
     };
@@ -105,8 +110,9 @@ export const AdminPortalPage: React.FC = () => {
   }
 
   const pendingEnquiries = enquiries.filter(
-    (e) => e.status === 'NEW' || e.status === 'IN_REVIEW'
+    (e) => e.status === 'NEW' || e.status === 'UNDER_REVIEW'
   );
+
   const activeQuotes = quotations.filter(
     (q) => q.status === 'SENT' || q.status === 'DRAFT'
   );
@@ -150,8 +156,11 @@ export const AdminPortalPage: React.FC = () => {
       {currentTab === 'enquiries' && (
         <EnquiryManagement
           enquiries={enquiries}
+          products={products}
           onRefresh={loadData}
-          onOpenCreateQuotationForEnquiry={handleOpenCreateQuotationForEnquiry}
+          onOpenCreateQuotationForEnquiry={
+            handleOpenCreateQuotationForEnquiry
+          }
         />
       )}
 

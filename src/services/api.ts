@@ -6,11 +6,14 @@ import type {
   Quotation,
   CustomerOrder,
   EnquiryStatus,
+  EnquiryFilterParams,
+  PaginatedResponse,
   QuotationStatus,
   OrderStatus,
   PaymentStatus,
   PaymentMethod,
 } from '../types';
+import { canTransitionEnquiryStatus } from '../types';
 import {
   INITIAL_PRODUCTS,
   INITIAL_CUSTOMERS,
@@ -225,16 +228,259 @@ export const royalEdgeService = {
     };
   },
 
+  mapBackendEnquiry(item: any): Enquiry {
+    return {
+      id: item.id,
+      enquiryNumber: item.enquiryNumber,
+      customerId: item.customerId,
+      customerName: item.customerName,
+      companyName: item.companyName || '',
+      phone: item.customerPhone || item.phone || '',
+      email: item.customerEmail || item.email || '',
+      customerPhone: item.customerPhone || item.phone || '',
+      customerEmail: item.customerEmail || item.email || '',
+      category: item.productCategory || item.category || 'Fusible Elastic',
+      productCategory: item.productCategory || item.category,
+      productName: item.productName || 'Unspecified Product',
+      productId: item.productId,
+      quantity: item.quantity,
+      unit: item.unit || 'Meters',
+      enquiryType: item.enquiryType || 'BULK',
+      message: item.customerMessage || item.message || '',
+      customerMessage: item.customerMessage || item.message || '',
+      preferredContact: (item.preferredContactMethod || item.preferredContact || 'PHONE') as any,
+      preferredContactMethod: item.preferredContactMethod || item.preferredContact || 'PHONE',
+      status: item.status,
+      createdAt: item.createdAt,
+      updatedAt: item.updatedAt,
+      adminNotes: item.adminNotes || item.remarks || '',
+    };
+  },
+
   async getEnquiries(): Promise<Enquiry[]> {
     this.assertAdminAccess();
+    const token = this.getAdminSession()?.token;
+
+    // 1. Attempt backend fetch if authenticated and server is reachable
+    try {
+      const res = await fetch(`${API_BASE_URL}/admin/enquiries?size=100`, {
+        method: 'GET',
+        headers: {
+          'Accept': 'application/json',
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+        },
+      });
+
+      if (res.status === 401 || res.status === 403) {
+        throw new Error('401_UNAUTHORIZED');
+      }
+
+      if (res.ok) {
+        const pageData = await res.json();
+        if (pageData && Array.isArray(pageData.content)) {
+          return pageData.content.map((it: any) => this.mapBackendEnquiry(it));
+        }
+      }
+    } catch (err: any) {
+      if (err.message === '401_UNAUTHORIZED') throw err;
+      // Backend unavailable; fallback to storage
+    }
+
     return loadFromStorage<Enquiry[]>(STORAGE_KEYS.ENQUIRIES, INITIAL_ENQUIRIES);
+  },
+
+  async getEnquiriesPage(params: EnquiryFilterParams = {}): Promise<PaginatedResponse<Enquiry>> {
+    this.assertAdminAccess();
+    const token = this.getAdminSession()?.token;
+
+    // 1. Attempt backend fetch via GET /api/admin/enquiries
+    try {
+      const q = new URLSearchParams();
+      if (params.search?.trim()) q.set('search', params.search.trim());
+      if (params.status && params.status !== 'All') q.set('status', params.status);
+      if (params.productId) q.set('productId', params.productId.toString());
+      if (params.startDate) q.set('startDate', params.startDate);
+      if (params.endDate) q.set('endDate', params.endDate);
+      if (params.page !== undefined) q.set('page', params.page.toString());
+      if (params.size !== undefined) q.set('size', params.size.toString());
+      if (params.sort) q.set('sort', params.sort);
+
+      const qs = q.toString();
+      const res = await fetch(`${API_BASE_URL}/admin/enquiries${qs ? `?${qs}` : ''}`, {
+        method: 'GET',
+        headers: {
+          'Accept': 'application/json',
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+        },
+      });
+
+      if (res.status === 401 || res.status === 403) {
+        throw new Error('401_UNAUTHORIZED');
+      }
+
+      if (res.ok) {
+        const data = await res.json();
+        const mapped = (data.content || []).map((it: any) => this.mapBackendEnquiry(it));
+        return {
+          content: mapped,
+          totalElements: data.totalElements ?? mapped.length,
+          totalPages: data.totalPages ?? 1,
+          size: data.size ?? (params.size || 20),
+          number: data.number ?? 0,
+          first: data.first ?? true,
+          last: data.last ?? true,
+          empty: data.empty ?? mapped.length === 0,
+        };
+      }
+    } catch (err: any) {
+      if (err.message === '401_UNAUTHORIZED') throw err;
+      console.warn('Backend /api/admin/enquiries not reachable, falling back to local query:', err);
+    }
+
+    // 2. Local resilient fallback
+    const all = loadFromStorage<Enquiry[]>(STORAGE_KEYS.ENQUIRIES, INITIAL_ENQUIRIES);
+    let filtered = [...all];
+
+    if (params.status && params.status !== 'All') {
+      filtered = filtered.filter((e) => e.status === params.status);
+    }
+
+    if (params.productId) {
+      filtered = filtered.filter((e) => e.productId === Number(params.productId));
+    }
+
+    if (params.startDate) {
+      const startIso = `${params.startDate}T00:00:00`;
+      filtered = filtered.filter((e) => e.createdAt >= startIso);
+    }
+
+    if (params.endDate) {
+      const endIso = `${params.endDate}T23:59:59`;
+      filtered = filtered.filter((e) => e.createdAt <= endIso);
+    }
+
+    if (params.search?.trim()) {
+      const s = params.search.trim().toLowerCase();
+      filtered = filtered.filter(
+        (e) =>
+          e.enquiryNumber.toLowerCase().includes(s) ||
+          e.customerName.toLowerCase().includes(s) ||
+          e.phone.includes(s) ||
+          (e.companyName && e.companyName.toLowerCase().includes(s)) ||
+          (e.productName && e.productName.toLowerCase().includes(s))
+      );
+    }
+
+    // Sort by createdAt desc
+    filtered.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+
+    const pageSize = params.size || 20;
+    const pageNum = params.page || 0;
+    const totalElements = filtered.length;
+    const totalPages = Math.max(1, Math.ceil(totalElements / pageSize));
+    const startIdx = pageNum * pageSize;
+    const content = filtered.slice(startIdx, startIdx + pageSize);
+
+    return {
+      content,
+      totalElements,
+      totalPages,
+      size: pageSize,
+      number: pageNum,
+      first: pageNum === 0,
+      last: pageNum >= totalPages - 1,
+      empty: content.length === 0,
+    };
+  },
+
+  async getEnquiryById(id: number): Promise<Enquiry> {
+    this.assertAdminAccess();
+    const token = this.getAdminSession()?.token;
+
+    try {
+      const res = await fetch(`${API_BASE_URL}/admin/enquiries/${id}`, {
+        method: 'GET',
+        headers: {
+          'Accept': 'application/json',
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+        },
+      });
+
+      if (res.status === 401 || res.status === 403) {
+        throw new Error('401_UNAUTHORIZED');
+      }
+
+      if (res.ok) {
+        const data = await res.json();
+        return this.mapBackendEnquiry(data);
+      }
+    } catch (err: any) {
+      if (err.message === '401_UNAUTHORIZED') throw err;
+      console.warn(`Backend /api/admin/enquiries/${id} error, fallback to local storage:`, err);
+    }
+
+    const enquiries = loadFromStorage<Enquiry[]>(STORAGE_KEYS.ENQUIRIES, INITIAL_ENQUIRIES);
+    const target = enquiries.find((e) => e.id === id);
+    if (!target) throw new Error(`Enquiry ${id} not found.`);
+    return target;
   },
 
   async updateEnquiryStatus(id: number, status: EnquiryStatus, adminNotes?: string): Promise<Enquiry> {
     this.assertAdminAccess();
+    const token = this.getAdminSession()?.token;
+
+    // 1. Attempt backend update via PUT /api/admin/enquiries/{id}/status
+    try {
+      const res = await fetch(`${API_BASE_URL}/admin/enquiries/${id}/status`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({
+          status,
+          remarks: adminNotes?.trim() || undefined,
+        }),
+      });
+
+      if (res.status === 401 || res.status === 403) {
+        throw new Error('401_UNAUTHORIZED');
+      }
+
+      if (res.ok) {
+        const data = await res.json();
+        const updated = this.mapBackendEnquiry(data);
+        // Sync local storage
+        const enquiries = loadFromStorage<Enquiry[]>(STORAGE_KEYS.ENQUIRIES, INITIAL_ENQUIRIES);
+        const idx = enquiries.findIndex((e) => e.id === id);
+        if (idx !== -1) {
+          enquiries[idx] = updated;
+          saveToStorage(STORAGE_KEYS.ENQUIRIES, enquiries);
+        }
+        return updated;
+      } else {
+        const errorData = await res.json().catch(() => null);
+        const msg = errorData?.message || `Status update rejected (${res.status})`;
+        throw new Error(msg);
+      }
+    } catch (err: any) {
+      // Re-throw validation/unauthorized errors
+      if (err.message && (err.message.includes('transition') || err.message === '401_UNAUTHORIZED' || err.message.startsWith('Invalid status transition'))) {
+        throw err;
+      }
+      console.warn('Backend status update offline, applying locally with validation:', err);
+    }
+
+    // 2. Local transition validation and update
     const enquiries = loadFromStorage<Enquiry[]>(STORAGE_KEYS.ENQUIRIES, INITIAL_ENQUIRIES);
     const target = enquiries.find((e) => e.id === id);
     if (!target) throw new Error(`Enquiry ${id} not found.`);
+
+    if (!canTransitionEnquiryStatus(target.status, status)) {
+      throw new Error(`Invalid status transition from ${target.status} to ${status}.`);
+    }
+
     target.status = status;
     if (adminNotes !== undefined) {
       target.adminNotes = adminNotes;
@@ -422,11 +668,11 @@ export const royalEdgeService = {
     orders.unshift(newOrder);
     saveToStorage(STORAGE_KEYS.ORDERS, orders);
 
-    // If linked to an enquiry, update enquiry status to CONVERTED
+    // If linked to an enquiry, update enquiry status to ACCEPTED
     if (quote.enquiryId) {
       await this.updateEnquiryStatus(
         quote.enquiryId,
-        'CONVERTED',
+        'ACCEPTED',
         `Quotation accepted. Confirmed order ${orderNumber} created.`
       );
     }

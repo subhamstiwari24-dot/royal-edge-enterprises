@@ -50,31 +50,77 @@ export type EnquiryType = 'RETAIL' | 'BULK';
 
 export type EnquiryStatus =
   | 'NEW'
-  | 'IN_REVIEW'
-  | 'CONTACTED'
+  | 'UNDER_REVIEW'
   | 'QUOTATION_PREPARED'
-  | 'CONVERTED'
-  | 'REJECTED';
+  | 'QUOTATION_SENT'
+  | 'ACCEPTED'
+  | 'REJECTED'
+  | 'CLOSED';
+
+export const VALID_ENQUIRY_TRANSITIONS: Record<EnquiryStatus, EnquiryStatus[]> = {
+  NEW: ['UNDER_REVIEW', 'QUOTATION_PREPARED', 'REJECTED', 'CLOSED'],
+  UNDER_REVIEW: ['QUOTATION_PREPARED', 'REJECTED', 'CLOSED'],
+  QUOTATION_PREPARED: ['QUOTATION_SENT', 'REJECTED', 'CLOSED'],
+  QUOTATION_SENT: ['ACCEPTED', 'REJECTED', 'CLOSED'],
+  ACCEPTED: ['CLOSED'],
+  REJECTED: ['CLOSED'],
+  CLOSED: [],
+};
+
+export function canTransitionEnquiryStatus(current: EnquiryStatus, target: EnquiryStatus): boolean {
+  if (current === target) return true;
+  const allowed = VALID_ENQUIRY_TRANSITIONS[current];
+  return allowed ? allowed.includes(target) : false;
+}
+
+export interface EnquiryFilterParams {
+  search?: string;
+  status?: EnquiryStatus | 'All';
+  productId?: number;
+  startDate?: string;
+  endDate?: string;
+  page?: number;
+  size?: number;
+  sort?: string;
+}
+
+export interface PaginatedResponse<T> {
+  content: T[];
+  totalElements: number;
+  totalPages: number;
+  size: number;
+  number: number;
+  first: boolean;
+  last: boolean;
+  empty: boolean;
+}
 
 export type PreferredContact = 'WHATSAPP' | 'PHONE' | 'EMAIL';
 
 export interface Enquiry {
   id: number;
   enquiryNumber: string;
+  customerId?: number;
   customerName: string;
   companyName?: string;
   phone: string;
   email?: string;
+  customerPhone?: string;
+  customerEmail?: string;
   category: ProductCategory;
+  productCategory?: string;
   productName?: string;
   productId?: number;
   quantity: number;
   unit: string;
   enquiryType: EnquiryType;
   message?: string;
+  customerMessage?: string;
   preferredContact: PreferredContact;
+  preferredContactMethod?: string;
   status: EnquiryStatus;
   createdAt: string;
+  updatedAt?: string;
   adminNotes?: string;
 }
 

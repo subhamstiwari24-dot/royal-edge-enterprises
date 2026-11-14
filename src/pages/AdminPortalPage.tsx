@@ -150,6 +150,7 @@ export const AdminPortalPage: React.FC = () => {
       {currentTab === 'enquiries' && (
         <EnquiryManagement
           enquiries={enquiries}
+          products={products}
           onRefresh={loadData}
           onOpenCreateQuotationForEnquiry={handleOpenCreateQuotationForEnquiry}
         />

@@ -32,7 +32,7 @@ export const AdminOverview: React.FC<AdminOverviewProps> = ({
   onOpenNewQuoteModal,
 }) => {
   const pendingEnquiries = enquiries.filter(
-    (e) => e.status === 'NEW' || e.status === 'IN_REVIEW'
+    (e) => e.status === 'NEW' || e.status === 'UNDER_REVIEW'
   );
   const activeQuotations = quotations.filter(
     (q) => q.status === 'SENT' || q.status === 'DRAFT'
